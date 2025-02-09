@@ -1,0 +1,106 @@
+spring:
+  application:
+    name: admin-gateway
+  security:
+    oauth2:
+      client:
+        provider:
+          devops:
+            issuer-uri: https://oauth2.cloudinator.istad.co
+            authorization-uri: https://oauth2.cloudinator.istad.co/oauth2/authorize
+            token-uri: https://oauth2.cloudinator.istad.co/oauth2/token
+        registration:
+          devops:
+            provider: devops
+            client-id: devops
+            client-secret: Qwerty@2024
+            authorization-grant-type:
+              - authorization_code
+            scope: openid, profile
+            redirect-uri: https://admin.cloudinator.istad.co/login/oauth2/code/devops
+            client-authentication-method:
+              - client_secret_post
+              - client_secret_basic
+
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          enabled: false
+          lower-case-service-id: true
+      default-filters:
+        - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin Access-Control-Request-Headers
+        - SaveSession
+      routes:
+        - id: identity
+          uri: https://oauth2.cloudinator.istad.co
+          predicates:
+            - Path=/identity/**
+          filters:
+            - TokenRelay=
+            - RewritePath=/identity/(?<segment>.*),/$\{segment}
+        - id: project-service
+          uri: http://68.183.183.12:30003
+          predicates:
+            - Path=/project/**
+          filters:
+            - TokenRelay=
+            - RewritePath=/project/(?<segment>.*),/$\{segment}
+        - id: media
+          uri: http://68.183.183.12:30004
+          predicates:
+            - Path=/media/**
+          filters:
+            - TokenRelay=
+            - RewritePath=/media/(?<segment>.*),/$\{segment}
+        - id: webapp-bff
+          uri: http://68.183.183.12:30005
+          predicates:
+            - Path=/**
+    loadbalancer:
+      enabled: false
+
+server:
+  port: 8081
+management:
+  endpoint:
+    health:
+      show-details: always
+    gateway:
+      enabled: true
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+
+
+
+client-security-matchers: >
+  /login/**,
+  /oauth2/**,
+  /logout/**,
+  /en/**,
+  /auth/**,
+  /error/**,
+  /identity/**,
+  /project/**
+
+
+client-permit-matchers: >
+  /login/**,
+  /oauth2/**,
+  /en/**,
+  /auth/**,
+  /error/**,
+  /identity/**,
+  /project/**
+
+eureka:
+  instance:
+    prefer-ip-address: true
+  client:
+    register-with-eureka: true
+    fetch-registry: true
+    service-url:
+      defaultZone: http://68.183.183.12:30001/eureka/
+
