@@ -37,11 +37,10 @@ public class SecurityConfig {
         http.securityMatcher(new OrServerWebExchangeMatcher(clientRoutes));*/
 
         http
-                .authorizeExchange(exchange -> exchange
-                        //.pathMatchers(permitMatchers).permitAll()
-                        .pathMatchers("/**").authenticated()
-                        .anyExchange().permitAll()
-                );
+    .authorizeExchange(exchange -> exchange
+        .pathMatchers("/**").hasRole("ADMIN")  // Only users with 'admin' role are allowed
+        .anyExchange().permitAll()  // Permit all other exchanges
+    );
 
         http
                 .oauth2Login(oAuth2LoginSpec -> {
